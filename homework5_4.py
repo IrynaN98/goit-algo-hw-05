@@ -1,3 +1,6 @@
+import re
+from typing import Callable, Generator
+
 def input_error(func):
     def inner(*args, **kwargs):
         try:
@@ -15,12 +18,14 @@ def greet():
     return "How can I help you?"
 
 @input_error
-def add_contact(username, phone, contacts):
+def add_contact(args, contacts):
+    username, phone = args
     contacts[username] = phone
     return "Contact added successfully."
 
 @input_error
-def change_contact(username, phone, contacts):
+def change_contact(args, contacts):
+    username, phone = args
     if username in contacts:
         contacts[username] = phone
         return "Phone number updated successfully."
@@ -28,7 +33,8 @@ def change_contact(username, phone, contacts):
         raise KeyError
 
 @input_error
-def get_phone(username, contacts):
+def get_phone(args, contacts):
+    username = args[0]
     if username in contacts:
         return f"The phone number for {username} is {contacts[username]}."
     else:
@@ -41,39 +47,29 @@ def get_all_contacts(contacts):
     else:
         return "No contacts found."
 
+def parse_input(command):
+    parts = command.strip().lower().split(" ", 1)
+    action = parts[0]
+    args = parts[1].split() if len(parts) > 1 else []
+    return action, args
+
 def main():
     contacts = {}
     while True:
-        command = input("Enter command: ").strip().lower()
-        if command == "hello":
+        command = input("Enter command: ")
+        action, args = parse_input(command)
+        
+        if action == "hello":
             print(greet())
-        elif command.startswith("add"):
-            try:
-                _, username, phone = command.split(" ", 2)
-                print(add_contact(username, phone, contacts))
-            except ValueError:
-                print("Give me name and phone please.")
-            except IndexError:
-                print("Enter user name.")
-        elif command.startswith("change"):
-            try:
-                _, username, phone = command.split(" ", 2)
-                print(change_contact(username, phone, contacts))
-            except ValueError:
-                print("Give me name and phone please.")
-            except IndexError:
-                print("Enter user name.")
-        elif command.startswith("phone"):
-            try:
-                _, username = command.split(" ", 1)
-                print(get_phone(username, contacts))
-            except ValueError:
-                print("Give me name please.")
-            except IndexError:
-                print("Enter user name.")
-        elif command == "all":
+        elif action == "add":
+            print(add_contact(args, contacts))
+        elif action == "change":
+            print(change_contact(args, contacts))
+        elif action == "phone":
+            print(get_phone(args, contacts))
+        elif action == "all":
             print(get_all_contacts(contacts))
-        elif command in ["close", "exit"]:
+        elif action in ["close", "exit"]:
             print("Good bye!")
             break
         else:
